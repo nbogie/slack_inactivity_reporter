@@ -61,11 +61,11 @@ def aggregate_activity(history, users):
     print(user_activity_dict)
     return user_activity_dict
 
-def introduction(input_channel):
+def make_introduction(input_channel):
     fmt_string = "Who's not present in the last 1000 messages on {:s}?"
     return fmt_string.format(format_channel(input_channel))
 
-def conclusion(active_users, users):
+def make_conclusion(active_users, users):
     non_posters = [user_id for user_id in active_users
                    if active_users[user_id] == False]
 
@@ -97,47 +97,53 @@ def parse_command_line():
                         help = 'flag to dry-run results to standard output')
     return parser.parse_args()
 
-args = parse_command_line()
-bot_name = args.bot_name
-dry_run = args.dry_run
 
-# Read configuration from the specified files
-with open(args.token_file) as token_file:
-    token = token_file.read().strip()
+def read_config_files(args):
+    # Read configuration from the specified files
+    with open(args.token_file) as token_file:
+        token = token_file.read().strip()
 
-with open(args.input_channel_file) as input_channel_file:
-    # Take only the first line after the header
-    input_channel = next(csv.DictReader(input_channel_file))
+    with open(args.input_channel_file) as input_channel_file:
+        # Take only the first line after the header
+        input_channel = next(csv.DictReader(input_channel_file))
 
-with open(args.output_channel_file) as output_channel_file:
-    # Take only the first line after the header
-    output_channel = next(csv.DictReader(output_channel_file))
+    with open(args.output_channel_file) as output_channel_file:
+        # Take only the first line after the header
+        output_channel = next(csv.DictReader(output_channel_file))
 
-with open(args.user_file) as user_file:
-    users = {user['user_id']: user['user_name']
-             for user in csv.DictReader(user_file)}
+    with open(args.user_file) as user_file:
+        users = {user['user_id']: user['user_name']
+                 for user in csv.DictReader(user_file)}
+    return token, input_channel, output_channel, users                      
 
-# Slack API call to get history
-message_history = get_message_history(token,
-                                      input_channel['channel_id'])
-print (message_history)
-#calc who is active
-active_users = aggregate_activity(message_history, users)
-print (active_users)
+def run():
+    args = parse_command_line()
+    bot_name = args.bot_name
+    dry_run = args.dry_run
 
-# Preamble
-introduction = introduction(input_channel)
+    token, input_channel, output_channel, users = read_config_files(args)
 
-# Call out non-posters or congratulate the team
-conclusion = conclusion(active_users, users)
+    # Slack API call to get history
+    message_history = get_message_history(token,
+                                          input_channel['channel_id'])
+    print (message_history)
+    #calc who is active
+    active_users = aggregate_activity(message_history, users)
+    print (active_users)
 
-# Assemble the full_message
-full_message = '\n'.join([introduction,
-                          
-                          conclusion])
+    # Preamble
+    introduction = make_introduction(input_channel)
 
-# Slack API call to publish summary
-if dry_run:
-    print(full_message)
-else:
-    post_message(token, output_channel['channel_id'], full_message, bot_name)
+    # Call out non-posters or congratulate the team
+    conclusion = make_conclusion(active_users, users)
+
+    # Assemble the full_message
+    full_message = '\n'.join([introduction, conclusion])
+
+    # Slack API call to publish summary
+    if dry_run:
+        print(full_message)
+    else:
+        post_message(token, output_channel['channel_id'], full_message, bot_name)
+
+run()
