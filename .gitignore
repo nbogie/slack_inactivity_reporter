@@ -3,3 +3,4 @@ users.csv
 input_channel.csv
 output_channel.csv
 __pycache__/
+*.pyc
