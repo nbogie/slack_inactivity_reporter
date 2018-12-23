@@ -13,8 +13,7 @@ import csv
 import sys
 
 token = input().strip()
-user_list = slack_api.call_slack('users.list',
-                                 {'token': token})
+user_list = slack_api.call_slack('users.list', {'token': token})
 
 user_list_writer = csv.writer(sys.stdout)
 

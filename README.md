@@ -44,57 +44,15 @@ times.
 
 ### Typical use
 
-I run the bot from my work computer each Monday morning:
 ```
 python3 standup_snitch.py -t api_token.txt \
-                          -d 7 \
                           -i input_channel.csv \
                           -o output_channel.csv \
                           -u users.csv \
                           -b SnitchBot
 ```
-Configure as you see fit; name the bot creatively; put it in a
-crontab; and take good care of your people!
 
 ### Other features
 
 * `-r`: Dry-run the `standup_snitch` report to standard output instead
 of sending it to Slack.
-
-### Maintaining the user list
-
-You can manually maintain `users.csv` to add users (running
-`list_users.py` and merging the lists) and remove users (deleting
-lines from `users.csv`). However, since internships, vacations, and
-normal turnover means that the set of active users changes frequently,
-two `bash` scripts are included to make these tasks easier. Each
-script creates a file `users.csv.new`, shows you the proposed changes,
-and prompts you to verify the changes before applying them.
-
-* `bash add_user.sh users.csv new_user_name api_token.txt`
-* `bash remove_user.sh users.csv user_to_remove`
-
-## Philosophy
-
-I am releasing this with trepidation because I know it's going to be
-used by lousy bosses to harass their workers. In
-[our academic research group](http://stephenslab.uchicago.edu), we use
-Slack, which we've found to be a great way to organize communications
-between a bunch of busy people with varied schedules and semi-remote
-working habits. (Much better than endless email threads with
-ever-changing cc lists.) One of the ongoing expectations in our lab is
-to touch base at least weekly on a `#standup` Slack channel to let
-your peers know what you've worked on, what you plan to work on, and
-if you're stuck on anything.
-
-I've personally seen a lot of very talented people drop out of
-Ph.D. programs. In my experience, graduation rate has seemed highly
-correlated with engaging one's peers about one's challenges in the
-process of overcoming them. (Notably, it has also seemed almost
-uncorrelated with intelligence; virtually everyone who gets into a
-graduate program is smart enough to graduate.) Dropping out of grad
-school seems to me to be mostly a failure of community. For this
-reason, I was pleased to see the `#standup` channel when I started
-here and felt motivated to help enforce its usage. I wrote this bot to
-automate the process of following up on students who might fall
-through the cracks without extra attention.
