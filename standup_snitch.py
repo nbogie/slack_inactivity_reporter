@@ -88,10 +88,10 @@ def make_introduction(input_channel, n_days):
     return "Slack report time: %s\n\nWho's NOT present in the last %d days on #%s?\n" % ( DT.datetime.now(), n_days, channel_name )
 
 
-def make_conclusion(active_users, counter, users):
+def make_conclusion(active_users_dict, counter, users):
     res = []
-    non_posters = [user_id for user_id in active_users
-                   if active_users[user_id] == False]
+    non_posters = [user_id for user_id in active_users_dict
+                   if active_users_dict[user_id] == False]
     if len(non_posters) == 0:
         res.append('No-one is missing!  Go team!')
     else:
@@ -176,14 +176,14 @@ def run():
                                           args.log_raw_json)
     
     #calc who is active
-    active_users = aggregate_activity(message_history, users)
+    active_users_dict = aggregate_activity(message_history, users)
 
     # Preamble
     introduction = make_introduction(input_channel, n_days)
 
     counter = Counter(map(lambda x: x['user'], message_history))
     
-    conclusion = make_conclusion(active_users, counter, users)
+    conclusion = make_conclusion(active_users_dict, counter, users)
 
     # Assemble the full_message
     full_message = '\n'.join(['```', introduction, conclusion, '```'])
