@@ -78,8 +78,13 @@ Unix (epoch) Timestamps are used.  See: https://api.slack.com/docs/message-forma
 The script will log the json of the channels.history API call in sensitive/channels.history.json
 This contains other messages (currently filtered from final report) which will be useful to use (e.g. calls)
 
+# ToDo
 
-## Alternative API approaches
+See the github project's issue tracker.
 
-List users with detail, then filter only the class 5 (class N) users
-It doesn't look like we can find last-message date for each user via the [users.list api](https://api.slack.com/methods/users.list)
+Also, Jonny suggested some KPIs
+
+* Amount of messages
+* Regularity of messages
+* Time on calls
+* Speaking-time on calls??
