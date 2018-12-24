@@ -15,6 +15,9 @@
 import slack_api
 import csv
 import argparse
+import json
+from collections import Counter
+import datetime as DT
 
 def format_channel(channel_dict):
     return ''.join(['<#',
@@ -30,14 +33,19 @@ def format_user(user_id, user_name):
                     user_name,
                     '>'])
 
-def get_message_history(token, channel):
+def json_pp(obj):
+    return json.dumps(obj, indent=4, sort_keys=True)
+    
+def get_message_history(token, channel, days):
     # 1000 messages is the maximum allowed by the API.
-    print("channel", channel)
+    ts = timestamp_for_days_ago(days)
+    print("channel", channel, " for ", days, " days.  TS: ", ts)
     history_raw = slack_api.call_slack('channels.history',
                                        {'token': token,
-                                        'channel': channel,                                       
+                                        'channel': channel, 
+                                        'oldest': ts,
                                         'count': 1000})
-    print(history_raw)
+    print(json_pp(history_raw))
 
     return [{'user': message['user'], 'ts': message['ts']}
             for message in history_raw['messages']
@@ -61,9 +69,8 @@ def aggregate_activity(history, users):
     print(user_activity_dict)
     return user_activity_dict
 
-def make_introduction(input_channel):
-    fmt_string = "Who's not present in the last 1000 messages on {:s}?"
-    return fmt_string.format(format_channel(input_channel))
+def make_introduction(input_channel, n_days):
+    return "Who's not present in the last %d days on %s?" % ( n_days, format_channel(input_channel) )
 
 def make_conclusion(active_users, users):
     non_posters = [user_id for user_id in active_users
@@ -92,6 +99,7 @@ def parse_command_line():
     parser.add_argument('-o', '--output_channel_file',
                         help = 'file with Slack channel to write to')
     parser.add_argument('-u', '--user_file', help = 'file with user list')
+    parser.add_argument('-d', '--num_days', action="store", default=10, type=int, help = 'number of days over which to look back')
     parser.add_argument('-b', '--bot_name', help = 'display name of bot')
     parser.add_argument('-r', '--dry_run', action = 'store_true',
                         help = 'flag to dry-run results to standard output')
@@ -116,23 +124,36 @@ def read_config_files(args):
                  for user in csv.DictReader(user_file)}
     return token, input_channel, output_channel, users                      
 
+def timestamp_for_days_ago(n_days):
+    # no doubt there's a tidier way to do this.  Newbie code.
+    now = DT.datetime.now()
+    week_ago = now - DT.timedelta(days=n_days)
+    timestamp = (week_ago - DT.datetime(1970, 1, 1)) / DT.timedelta(seconds=1)
+    return timestamp
+
 def run():
     args = parse_command_line()
     bot_name = args.bot_name
     dry_run = args.dry_run
+    n_days = int(args.num_days)
 
     token, input_channel, output_channel, users = read_config_files(args)
 
     # Slack API call to get history
     message_history = get_message_history(token,
-                                          input_channel['channel_id'])
-    print (message_history)
+                                          input_channel['channel_id'],
+                                          100)
+    print(json_pp(message_history))
+
+    counter = Counter(map(lambda x: x['user'], message_history))
+
+    print([(users[e[0]], e[1]) for e in counter.most_common()])
+    
     #calc who is active
     active_users = aggregate_activity(message_history, users)
-    print (active_users)
 
     # Preamble
-    introduction = make_introduction(input_channel)
+    introduction = make_introduction(input_channel, n_days)
 
     # Call out non-posters or congratulate the team
     conclusion = make_conclusion(active_users, users)
@@ -144,6 +165,9 @@ def run():
     if dry_run:
         print(full_message)
     else:
-        post_message(token, output_channel['channel_id'], full_message, bot_name)
+        print(full_message)
+        # we don't want to post to slack at all, currently. or maybe into mentors channel.
+        # post_message(token, output_channel['channel_id'], full_message, bot_name)
 
+print(timestamp_for_days_ago(7))
 run()

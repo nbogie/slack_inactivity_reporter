@@ -56,3 +56,19 @@ python3 standup_snitch.py -t api_token.txt \
 
 * `-r`: Dry-run the `standup_snitch` report to standard output instead
 of sending it to Slack.
+
+## On the Slack API usage:
+
+The following calls are used:
+
+* [channels.list](https://api.slack.com/methods/channels.list)
+* [users.list](https://api.slack.com/methods/users.list)
+* [channels.history](https://api.slack.com/methods/channels.history)
+* [chat.postMessage](https://api.slack.com/methods/chat.postMessage) (removed from cyf impl, currently)
+
+Unix (epoch) Timestamps are used.  See: https://api.slack.com/docs/message-formatting
+
+## Alternative API approaches
+
+List users with detail, then filter only the class 5 (class N) users
+It doesn't look like we can find last-message date for each user via the [users.list api](https://api.slack.com/methods/users.list)
