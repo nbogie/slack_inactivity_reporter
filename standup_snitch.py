@@ -119,7 +119,7 @@ def parse_command_line():
                         help = 'file with Slack channel to write to')
     parser.add_argument('-u', '--user_file', help = 'file with user list')
     parser.add_argument('-d', '--num_days', default=10, type=int, help = 'number of days over which to look back')
-    parser.add_argument('-l', '--log_raw_json', action='store_false', default=False, help = 'log raw json response to file: sensitive/channels.history.json')
+    parser.add_argument('-l', '--log_raw_json', action='store_true', help = 'log raw json response to file: sensitive/channels.history.json')
     parser.add_argument('-r', '--dry_run', action = 'store_true',
                         help = 'flag to dry-run results to standard output')
     return parser.parse_args()
