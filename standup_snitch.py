@@ -139,7 +139,9 @@ def run():
     n_days = int(args.num_days)
 
     token, input_channel, output_channel, users = read_config_files(args)
-
+    
+    print("Slack report time: %s" % DT.datetime.now())
+    
     # Slack API call to get history
     message_history = get_message_history(token,
                                           input_channel['channel_id'],
@@ -159,9 +161,8 @@ def run():
     for e in counter.most_common():
          if e[0] in users:
              print("%s: %s" % ( users[e[0]]['real_name'], e[1]))
-    
-    
     print("\n\n")
+    
     # Call out non-posters or congratulate the team
     conclusion = make_conclusion(active_users, users)
 
