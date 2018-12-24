@@ -26,11 +26,18 @@ def format_channel(channel_dict):
                     channel_dict['channel_name'],
                     '>'])
 
-def format_user(user_id, user_name):
+def format_user_for_slack(user_id, user_info):
     return ''.join(['<@',
                     user_id,
                     '|',
-                    user_name,
+                    user_info['user_name'],
+                    '>'])
+
+def format_user_for_text(user_id, user_info):
+    return ''.join(['<@',
+                    user_id,
+                    '|',
+                    user_info['real_name'],
                     '>'])
 
 def json_pp(obj):
@@ -79,7 +86,7 @@ def make_conclusion(active_users, users):
     if len(non_posters) == 0:
         return 'Go team!'
     else:
-        tag_items = [format_user(user_id, users[user_id])
+        tag_items = [format_user_for_text(user_id, users[user_id])
                      for user_id in non_posters] + ['we miss you.']
         return ', '.join(tag_items)
 
@@ -121,8 +128,9 @@ def read_config_files(args):
         output_channel = next(csv.DictReader(output_channel_file))
 
     with open(args.user_file) as user_file:
-        users = {user['user_id']: user['user_name']
-                 for user in csv.DictReader(user_file)}
+        users = {user['user_id']: {'user_name': user['user_name'], 
+                                   'real_name': user['real_name'], 
+                                   'user_id': user['user_id']} for user in csv.DictReader(user_file)}
     return token, input_channel, output_channel, users                      
 
 def timestamp_for_days_ago(n_days):
@@ -147,7 +155,9 @@ def run():
     
     counter = Counter(map(lambda x: x['user'], message_history))
     
-    print([(users[e[0]], e[1]) for e in counter.most_common() if e[0] in users])
+    for e in counter.most_common():
+         if e[0] in users:
+             print(users[e[0]]['real_name'],e[1],users[e[0]]) 
     
     #calc who is active
     active_users = aggregate_activity(message_history, users)
@@ -169,5 +179,4 @@ def run():
         # we don't want to post to slack at all, currently. or maybe into mentors channel.
         # post_message(token, output_channel['channel_id'], full_message, bot_name)
 
-print(timestamp_for_days_ago(7))
 run()
