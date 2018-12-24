@@ -84,6 +84,7 @@ def make_conclusion(active_users, users):
         return ', '.join(tag_items)
 
 def post_message(token, channel, text, bot_name):
+    raise Exception("TRIED TO POST A MESSAGE TO SLACK!")
     slack_api.call_slack('chat.postMessage',
                          {'token': token,
                           'channel': channel,
@@ -146,8 +147,8 @@ def run():
     print(json_pp(message_history))
 
     counter = Counter(map(lambda x: x['user'], message_history))
-
-    print([(users[e[0]], e[1]) for e in counter.most_common()])
+    
+    print([(users[e[0]], e[1]) for e in counter.most_common() if e[0] in users])
     
     #calc who is active
     active_users = aggregate_activity(message_history, users)
