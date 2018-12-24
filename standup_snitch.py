@@ -44,13 +44,19 @@ def json_pp(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
 
 
-def get_message_history(token, channel_id, channel_name, days, should_log_raw_channel_history=False):
+def get_message_history(token, channel_id, channel_name, days, use_fake_data=False, should_log_raw_channel_history=False):
     ts = timestamp_for_days_ago(days)
-    history_raw = slack_api.call_slack('channels.history',
-                                       {'token': token,
-                                        'channel': channel_id, 
-                                        'oldest': ts,
-                                        'count': 1000}) # 1000 messages is the maximum allowed by the API.    
+    if (use_fake_data):      
+        print('using fake data, not loaing from slack')          
+        with open('sensitive/channels.history.json') as f:
+            history_raw = json.load(f)
+    else:
+        history_raw = slack_api.call_slack('channels.history',
+                                           {'token': token,
+                                            'channel': channel_id, 
+                                            'oldest': ts,
+                                            'count': 1000}) # 1000 messages is the maximum allowed by the API.    
+
     if (should_log_raw_channel_history):
         with open('sensitive/channels.history.json', 'w') as f:
             f.write(json_pp(history_raw))    
@@ -66,6 +72,7 @@ def aggregate_activity(history, users):
     for user_id in users:
         user_activity_dict[user_id] \
             = False
+            
     for message in history:
         try:
             user = message['user']
@@ -120,6 +127,7 @@ def parse_command_line():
     parser.add_argument('-u', '--user_file', help = 'file with user list')
     parser.add_argument('-d', '--num_days', default=10, type=int, help = 'number of days over which to look back')
     parser.add_argument('-l', '--log_raw_json', action='store_true', help = 'log raw json response to file: sensitive/channels.history.json')
+    parser.add_argument('-f', '--use_fake_data', action='store_true', help = 'use fake data instead of getting from slack API')
     parser.add_argument('-r', '--dry_run', action = 'store_true',
                         help = 'flag to dry-run results to standard output')
     return parser.parse_args()
@@ -157,7 +165,6 @@ def run():
     args = parse_command_line()
     dry_run = args.dry_run
     n_days = int(args.num_days)
-    
     token, input_channel, output_channel, users = read_config_files(args)
 
     # Slack API call to get history
@@ -165,6 +172,7 @@ def run():
                                           input_channel['channel_id'],
                                           input_channel['channel_name'],
                                           n_days,
+                                          args.use_fake_data,
                                           args.log_raw_json)
     
     #calc who is active
