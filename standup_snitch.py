@@ -155,10 +155,10 @@ def run():
 
     counter = Counter(map(lambda x: x['user'], message_history))
     
-    print("\nMOST ACTIVE: (for debug purposes)")
+    print("\nMOST ACTIVE:")
     for e in counter.most_common():
          if e[0] in users:
-             print(users[e[0]]['real_name'],e[1],users[e[0]]) 
+             print("%s: %s" % ( users[e[0]]['real_name'], e[1]))
     
     
     print("\n\n")
