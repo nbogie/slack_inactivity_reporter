@@ -12,6 +12,8 @@
 #                                  -u users.csv \
 #                                  -d 7
 
+from random import randint
+
 import slack_api
 import csv
 import argparse
@@ -44,8 +46,8 @@ def json_pp(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
 
 
-def get_message_history(token, channel_id, channel_name, days, use_fake_data=False, should_log_raw_channel_history=False):
-    ts = timestamp_for_days_ago(days)
+def get_message_history(token, channel_id, channel_name, days, now_datetime, use_fake_data=False, should_log_raw_channel_history=False):
+    ts = timestamp_for_days_ago(now_datetime, days)
     if (use_fake_data):      
         print('using fake data, not loaing from slack')          
         with open('sensitive/channels.history.json') as f:
@@ -67,16 +69,20 @@ def get_message_history(token, channel_id, channel_name, days, use_fake_data=Fal
                 'ts' in message)]
 
 
-def aggregate_activity(history, users):
+def get_day_offset_for_ts(ts, now_ts):
+    return randint(0,7) # (now_ts - ts) / 86400
+
+def aggregate_activity(history, n_days, now_datetime, users):
     user_activity_dict = {}
-    for user_id in users:
-        user_activity_dict[user_id] \
-            = False
-            
+    
+    for user_id in users:        
+        user_activity_dict[user_id] = Counter()
+        
     for message in history:
         try:
             user = message['user']
-            user_activity_dict[user] = True
+            day_offset = get_day_offset_for_ts(float(message['ts']), now_datetime)
+            user_activity_dict[user][day_offset] += 1
         except KeyError:
             # Post from someone we're not tracking
             pass
@@ -88,7 +94,7 @@ def make_introduction(input_channel, n_days):
     return "Slack report time: %s\n\nWho's NOT present in the last %d days on #%s?\n" % ( DT.datetime.now(), n_days, channel_name )
 
 
-def make_conclusion(active_users_dict, counter, users):
+def make_conclusion(active_users_dict, n_days, counter, users):
     res = []
     non_posters = [user_id for user_id in active_users_dict
                    if active_users_dict[user_id] == False]
@@ -98,6 +104,15 @@ def make_conclusion(active_users_dict, counter, users):
         tag_items = [format_user_for_text(user_id, users[user_id])
                      for user_id in non_posters]
         res.extend(tag_items)
+    
+    #header
+    print("USER / DAY: %s" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)])))
+    print("-" * 80)
+
+    for uid in active_users_dict:
+        count_strs = "".join(["%2s " % active_users_dict[uid].get(day_offset, 0) for day_offset in range(n_days)])
+        print("%10s  %s" % (users[uid]['real_name'], count_strs))
+
     res.append("\nMOST ACTIVE:")
     for e in counter.most_common():
          if e[0] in users:
@@ -153,10 +168,9 @@ def read_config_files(args):
     return token, input_channel, output_channel, users                      
 
 
-def timestamp_for_days_ago(n_days):
+def timestamp_for_days_ago(now_datetime, n_days):
     # no doubt there's a tidier way to do this.  Newbie code.
-    now = DT.datetime.now()
-    week_ago = now - DT.timedelta(days=n_days)
+    week_ago = now_datetime - DT.timedelta(days=n_days)
     timestamp = (week_ago - DT.datetime(1970, 1, 1)) / DT.timedelta(seconds=1)
     return timestamp
 
@@ -166,24 +180,28 @@ def run():
     dry_run = args.dry_run
     n_days = int(args.num_days)
     token, input_channel, output_channel, users = read_config_files(args)
-
+    now_datetime = DT.datetime.now()
+    
     # Slack API call to get history
     message_history = get_message_history(token,
                                           input_channel['channel_id'],
                                           input_channel['channel_name'],
                                           n_days,
+                                          now_datetime,
                                           args.use_fake_data,
                                           args.log_raw_json)
     
     #calc who is active
-    active_users_dict = aggregate_activity(message_history, users)
-
+    active_users_dict = aggregate_activity(message_history, n_days, now_datetime, users)
+    for key in active_users_dict:
+        print(key, active_users_dict[key])
+        
     # Preamble
     introduction = make_introduction(input_channel, n_days)
 
     counter = Counter(map(lambda x: x['user'], message_history))
     
-    conclusion = make_conclusion(active_users_dict, counter, users)
+    conclusion = make_conclusion(active_users_dict, n_days, counter, users)
 
     # Assemble the full_message
     full_message = '\n'.join(['```', introduction, conclusion, '```'])
