@@ -34,26 +34,22 @@ def format_user_for_slack(user_id, user_info):
                     '>'])
 
 def format_user_for_text(user_id, user_info):
-    return ''.join(['<@',
-                    user_id,
-                    '|',
-                    user_info['real_name'],
-                    '>'])
+    return "%s (%s)" % (user_info['real_name'], user_info['user_name'])
 
 def json_pp(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
     
-def get_message_history(token, channel, days):
+def get_message_history(token, channel_id, channel_name, days):
     # 1000 messages is the maximum allowed by the API.
     ts = timestamp_for_days_ago(days)
-    print("channel", channel, " for ", days, " days.  TS: ", ts)
+    print("Looking at history of channel %s (%s) for %d days.  Oldest timestamp requested: %s" % (channel_name, channel_id, days, ts))
     history_raw = slack_api.call_slack('channels.history',
                                        {'token': token,
-                                        'channel': channel, 
+                                        'channel': channel_id, 
                                         'oldest': ts,
                                         'count': 1000})
-    print(json_pp(history_raw))
-
+    with open('sensitive/history.json', 'w') as f:
+        f.write(json_pp(history_raw))    
     return [{'user': message['user'], 'ts': message['ts']}
             for message in history_raw['messages']
             if (message['type'] == 'message' and
@@ -73,11 +69,10 @@ def aggregate_activity(history, users):
         except KeyError:
             # Post from someone we're not tracking
             pass
-    print(user_activity_dict)
     return user_activity_dict
 
 def make_introduction(input_channel, n_days):
-    return "Who's not present in the last %d days on %s?" % ( n_days, format_channel(input_channel) )
+    return "Who's NOT present in the last %d days on #%s?" % ( n_days, input_channel['channel_name'] )
 
 def make_conclusion(active_users, users):
     non_posters = [user_id for user_id in active_users
@@ -87,8 +82,8 @@ def make_conclusion(active_users, users):
         return 'Go team!'
     else:
         tag_items = [format_user_for_text(user_id, users[user_id])
-                     for user_id in non_posters] + ['we miss you.']
-        return ', '.join(tag_items)
+                     for user_id in non_posters]
+        return ', \n'.join(tag_items)
 
 def post_message(token, channel, text, bot_name):
     raise Exception("TRIED TO POST A MESSAGE TO SLACK!")
@@ -151,13 +146,8 @@ def run():
     # Slack API call to get history
     message_history = get_message_history(token,
                                           input_channel['channel_id'],
+                                          input_channel['channel_name'],
                                           n_days)
-    
-    counter = Counter(map(lambda x: x['user'], message_history))
-    
-    for e in counter.most_common():
-         if e[0] in users:
-             print(users[e[0]]['real_name'],e[1],users[e[0]]) 
     
     #calc who is active
     active_users = aggregate_activity(message_history, users)
@@ -165,6 +155,16 @@ def run():
     # Preamble
     introduction = make_introduction(input_channel, n_days)
 
+
+    counter = Counter(map(lambda x: x['user'], message_history))
+    
+    print("\nMOST ACTIVE: (for debug purposes)")
+    for e in counter.most_common():
+         if e[0] in users:
+             print(users[e[0]]['real_name'],e[1],users[e[0]]) 
+    
+    
+    print("\n\n")
     # Call out non-posters or congratulate the team
     conclusion = make_conclusion(active_users, users)
 
