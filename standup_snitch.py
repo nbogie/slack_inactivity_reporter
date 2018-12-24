@@ -40,15 +40,14 @@ def json_pp(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
     
 def get_message_history(token, channel_id, channel_name, days):
-    # 1000 messages is the maximum allowed by the API.
     ts = timestamp_for_days_ago(days)
     print("Looking at history of channel %s (%s) for %d days.  Oldest timestamp requested: %s" % (channel_name, channel_id, days, ts))
     history_raw = slack_api.call_slack('channels.history',
                                        {'token': token,
                                         'channel': channel_id, 
                                         'oldest': ts,
-                                        'count': 1000})
-    with open('sensitive/history.json', 'w') as f:
+                                        'count': 1000}) # 1000 messages is the maximum allowed by the API.
+    with open('sensitive/channels.history.json', 'w') as f:
         f.write(json_pp(history_raw))    
     return [{'user': message['user'], 'ts': message['ts']}
             for message in history_raw['messages']

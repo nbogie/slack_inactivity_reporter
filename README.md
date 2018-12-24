@@ -15,10 +15,12 @@ times.
 ## Setup instructions
 
 1. Clone this repo.
-2. [Get a Slack API token.](https://api.slack.com/web) Save it to the
+2. [Get a LEGACY Slack API token.](https://api.slack.com/custom-integrations/legacy-tokens) Save it to the
    repo's directory under `api_token.txt`. (You can save it wherever
    you want, but the `.gitignore` is put together to make this a
    convenient choice. The same is true for the other filenames below.)
+   We'll improve this to use the new auth system if we decide to 
+   use it at all.
 3. Get a list of your users along with their internal Slack IDs:
 
    ```
@@ -70,6 +72,12 @@ The following calls are used:
 * [chat.postMessage](https://api.slack.com/methods/chat.postMessage) (removed from cyf impl, currently)
 
 Unix (epoch) Timestamps are used.  See: https://api.slack.com/docs/message-formatting
+
+## Development and Debugging:
+
+The script will log the json of the channels.history API call in sensitive/channels.history.json
+This contains other messages (currently filtered from final report) which will be useful to use (e.g. calls)
+
 
 ## Alternative API approaches
 
