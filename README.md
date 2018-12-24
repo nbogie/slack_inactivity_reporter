@@ -1,16 +1,13 @@
 # Slack Standup Snitch
 
+This is a modification (primarily a simplification) of an existing project, for our purposes.
+
+The Slack Standup Snitch is a script that uses the [Slack](https://slack.com/) API and reports user activity to stdout.  The project also has the ability to post the report back to a different slack channel.
+
+The original made a report that looked like this:
 ![snitch_bot_in_action](https://cloud.githubusercontent.com/assets/8029092/7402900/f85095c0-ee95-11e4-91e7-940717732f3b.jpg)
 
-The Slack Standup Snitch is a [Slack](https://slack.com/) bot that
-counts the unique days that each user was active on a specified
-channel and calls out the inactive users. It runs on Python 3 without
-any further dependencies. It does the timestamp math to grab the posts
-from Slack between midnight the previous night and n days before
-that. It aggregates the *unique* days - if you posted five times on
-Monday and once on Wednesday, that counts for two days. It returns a
-text histogram of the activity and "ats" the users who checked in zero
-times.
+It runs fully automated so could be scheduled with cron.
 
 ## Setup instructions
 
@@ -88,3 +85,47 @@ Also, Jonny suggested some KPIs
 * Regularity of messages
 * Time on calls
 * Speaking-time on calls??
+
+# Sample output
+
+```
+Looking at history of channel student-channel (ABCD6ABCD) for 7 days.  Oldest timestamp requested: 1545050402.533997
+
+MOST ACTIVE:
+Charlie: 21
+Morris: 19
+Jane: 9
+Mary: 9
+Alan: 9
+Zeke: 8
+Edward: 8
+Tom: 7
+Isaac: 7
+Neill: 6
+Ian: 6
+Maisy: 4
+Molly: 4
+Norah: 4
+Abraham: 4
+Graham: 3
+Mike: 3
+Doris: 3
+Slackbot: 2
+Kev: 2
+Billy: 2
+Ed: 1
+Joker: 1
+Alfred: 1
+Susan: 1
+Nelly: 1
+
+
+
+Who's NOT present in the last 7 days on #student-channel?
+
+Ali (ali), 
+Horace (horace.spiders), 
+Hopper (hopper), 
+Will (will), 
+Mike (dm)
+```
