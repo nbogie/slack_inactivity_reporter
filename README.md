@@ -40,6 +40,9 @@ times.
    have a header and the line for the channel you want to send the
    report to.
 
+5. make a directory called `sensitive` Logs of the API json responses 
+   will be saved here for debugging.  This directory is ignored by git.
+
 ## How to use
 
 ### Typical use
@@ -49,7 +52,7 @@ python3 standup_snitch.py -t api_token.txt \
                           -i input_channel.csv \
                           -o output_channel.csv \
                           -u users.csv \
-                          -b SnitchBot
+                          -d 5
 ```
 
 ### Other features

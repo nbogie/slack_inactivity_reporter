@@ -1,16 +1,16 @@
 #! /usr/bin/env python3
 
 # Using the Slack API:
-# (1) Get recent history (last 1000 messages) of a specified input channel.
+# (1) Get recent history of a specified input channel.
 # (2) For each known user, note if user posted any message to the channel.
-# (3) Post a report to a specified output channel, calling out the
-#     inactive users.
+# (3) Post a report to stdout (or to a specified output slack channel, 
+#    calling out the inactive users.
 #
 # Usage: python3 standup_snitch.py -t api_token.txt \
 #                                  -i input_channel.csv \
 #                                  -o output_channel.csv \
 #                                  -u users.csv \
-#                                  -b SnitchBot
+#                                  -d 7
 
 import slack_api
 import csv
@@ -19,7 +19,7 @@ import json
 from collections import Counter
 import datetime as DT
 
-def format_channel(channel_dict):
+def format_channel_for_slack(channel_dict):
     return ''.join(['<#',
                     channel_dict['channel_id'],
                     '|',
@@ -103,7 +103,6 @@ def parse_command_line():
                         help = 'file with Slack channel to write to')
     parser.add_argument('-u', '--user_file', help = 'file with user list')
     parser.add_argument('-d', '--num_days', action="store", default=10, type=int, help = 'number of days over which to look back')
-    parser.add_argument('-b', '--bot_name', help = 'display name of bot')
     parser.add_argument('-r', '--dry_run', action = 'store_true',
                         help = 'flag to dry-run results to standard output')
     return parser.parse_args()
@@ -137,7 +136,6 @@ def timestamp_for_days_ago(n_days):
 
 def run():
     args = parse_command_line()
-    bot_name = args.bot_name
     dry_run = args.dry_run
     n_days = int(args.num_days)
 
@@ -177,6 +175,6 @@ def run():
     else:
         print(full_message)
         # we don't want to post to slack at all, currently. or maybe into mentors channel.
-        # post_message(token, output_channel['channel_id'], full_message, bot_name)
+        # post_message(token, output_channel['channel_id'], full_message)
 
 run()
