@@ -143,9 +143,8 @@ def run():
     # Slack API call to get history
     message_history = get_message_history(token,
                                           input_channel['channel_id'],
-                                          100)
-    print(json_pp(message_history))
-
+                                          n_days)
+    
     counter = Counter(map(lambda x: x['user'], message_history))
     
     print([(users[e[0]], e[1]) for e in counter.most_common() if e[0] in users])
