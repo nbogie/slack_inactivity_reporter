@@ -12,8 +12,6 @@
 #                                  -u users.csv \
 #                                  -d 7
 
-from random import randint
-
 import slack_api
 import csv
 import argparse
