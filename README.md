@@ -4,9 +4,6 @@ This is a modification (primarily a simplification) of an existing project, for 
 
 The Slack Standup Snitch is a script that uses the [Slack](https://slack.com/) API and reports user activity to stdout.  The project also has the ability to post the report back to a different slack channel.
 
-The original made a report that looked like this:
-![snitch_bot_in_action](https://cloud.githubusercontent.com/assets/8029092/7402900/f85095c0-ee95-11e4-91e7-940717732f3b.jpg)
-
 It runs fully automated so could be scheduled with cron.
 
 ## Setup instructions
@@ -40,7 +37,8 @@ It runs fully automated so could be scheduled with cron.
    report to.
 
 5. make a directory called `sensitive` Logs of the API json responses 
-   will be saved here for debugging.  This directory is ignored by git.
+   will be saved here for debugging if you request them.  
+   This directory is ignored by git.
 
 ## How to use
 
@@ -58,7 +56,7 @@ python3 standup_snitch.py -t api_token.txt \
 
 * `-r`: Dry-run the `standup_snitch` report to standard output instead
 of sending it to Slack.
-
+* `-f`: Use fake (non-live) data read from filesystem  `sensitive/channels.history.json`
 ## On the Slack API usage:
 
 The following calls are used:
