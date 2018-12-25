@@ -113,16 +113,10 @@ def make_conclusion(active_users_dict, n_days, counter, threshold, users):
     res.append("USER / DAY:     %s" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)])))
     res.append("-" * 80)
     
-    for uid in sorted(active_users_dict, key=lambda k: [sum(active_users_dict[k].values()), -min(active_users_dict[k], default=99)]):
+    for uid in sorted(active_users_dict, key=lambda k: (sum(active_users_dict[k].values()), -min(active_users_dict[k], default=99))):
         count_strs = "".join(["%2s " % active_users_dict[uid].get(day_offset, 0) for day_offset in range(n_days)])
         res.append("%10s(%3d) %s" % (users[uid]['real_name'], sum(active_users_dict[uid].values()), count_strs))
 
-    res.append("\nMOST ACTIVE:")
-    for e in counter.most_common():
-         if e[0] in users:
-             res.append("%s: %s" % ( users[e[0]]['real_name'], e[1]))
-    res.append("")
-    res.append("")    
     return "\n".join(res)
 
 
