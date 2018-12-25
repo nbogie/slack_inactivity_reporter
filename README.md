@@ -91,41 +91,46 @@ Also, Jonny suggested some KPIs
 ```
 Looking at history of channel student-channel (ABCD6ABCD) for 7 days.  Oldest timestamp requested: 1545050402.533997
 
-MOST ACTIVE:
-Charlie: 21
-Morris: 19
-Jane: 9
-Mary: 9
-Alan: 9
-Zeke: 8
-Edward: 8
-Tom: 7
-Isaac: 7
-Neill: 6
-Ian: 6
-Maisy: 4
-Molly: 4
-Norah: 4
-Abraham: 4
-Graham: 3
-Mike: 3
-Doris: 3
-Slackbot: 2
-Kev: 2
-Billy: 2
-Ed: 1
-Joker: 1
-Alfred: 1
-Susan: 1
-Nelly: 1
-
+USER / DAY:      1  2  3  4  5  6  7 
+--------------------------------------------------------------------------------
+       Ali(  0)  0  0  0  0  0  0  0 
+     Aaron(  0)  0  0  0  0  0  0  0 
+      Mary(  0)  0  0  0  0  0  0  0 
+  Marshall(  0)  0  0  0  0  0  0  0 
+       Sol(  0)  0  0  0  0  0  0  0 
+     Norah(  1)  0  0  0  0  0  1  0 
+    Sevrin(  1)  0  0  0  0  0  1  0 
+     Allan(  1)  0  0  0  0  1  0  0 
+     Jonny(  1)  0  0  1  0  0  0  0 
+    Edward(  1)  0  1  0  0  0  0  0 
+      Bill(  2)  0  0  0  0  1  0  1 
+     Kelly(  2)  0  0  0  1  0  1  0 
+  Slackbot(  2)  0  1  0  0  0  0  1 
+     David(  3)  0  0  0  0  1  2  0 
+    Marvin(  3)  0  0  0  1  2  0  0 
+     Neill(  3)  0  1  0  0  0  0  2 
+    German(  3)  1  0  0  0  0  1  1 
+       Ant(  4)  0  0  0  0  0  0  4 
+     Niala(  4)  0  0  0  0  0  1  3 
+    Marvel(  4)  0  0  2  0  0  0  2 
+    Misael(  4)  0  0  1  0  1  2  0 
+     Ivana(  6)  0  2  0  0  1  2  1 
+    Indigo(  7)  0  0  0  0  1  4  2 
+      Tony(  7)  0  2  2  0  1  2  0 
+      Easy(  8)  0  0  1  1  0  0  6 
+      Zeke(  8)  1  3  1  0  3  0  0 
+      Adam(  9)  0  0  0  1  3  5  0 
+     Molly(  9)  0  1  0  0  0  1  7 
+       Jen(  9)  0  4  1  0  0  4  0 
+     Maisy( 19)  0  0  2  2  0  0 15 
+      Conn( 21)  0  0  2  0  0  3 16 
 
 
 Who's NOT present in the last 7 days on #student-channel?
 
 Ali (ali), 
-Horace (horace.spiders), 
-Hopper (hopper), 
-Will (will), 
-Mike (dm)
+Aaron (aabb), 
+Mary (mary2020), 
+Marshall (marshall), 
+Sol (s.a)
 ```

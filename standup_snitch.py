@@ -69,8 +69,11 @@ def get_message_history(token, channel_id, channel_name, days, now_datetime, use
                 'ts' in message)]
 
 
-def get_day_offset_for_ts(ts, now_ts):
-    return randint(0,7) # (now_ts - ts) / 86400
+def get_day_offset_for_ts(ts, now_datetime):
+    now_ts = (now_datetime - DT.datetime(1970, 1, 1)) / DT.timedelta(seconds=1)
+    days_ago = int((now_ts - ts) / 86400)
+    return days_ago
+    
 
 def aggregate_activity(history, n_days, now_datetime, users):
     user_activity_dict = {}
@@ -94,10 +97,10 @@ def make_introduction(input_channel, n_days):
     return "Slack report time: %s\n\nWho's NOT present in the last %d days on #%s?\n" % ( DT.datetime.now(), n_days, channel_name )
 
 
-def make_conclusion(active_users_dict, n_days, counter, users):
+def make_conclusion(active_users_dict, n_days, counter, threshold, users):
     res = []
     non_posters = [user_id for user_id in active_users_dict
-                   if active_users_dict[user_id] == False]
+                   if sum(active_users_dict[user_id].values()) < threshold]
     if len(non_posters) == 0:
         res.append('No-one is missing!  Go team!')
     else:
@@ -105,13 +108,14 @@ def make_conclusion(active_users_dict, n_days, counter, users):
                      for user_id in non_posters]
         res.extend(tag_items)
     
+    res.append("\nMSGS-PER-DAY BREAKDOWN:\n")
     #header
-    print("USER / DAY: %s" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)])))
-    print("-" * 80)
-
-    for uid in active_users_dict:
+    res.append("USER / DAY:     %s" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)])))
+    res.append("-" * 80)
+    
+    for uid in sorted(active_users_dict, key=lambda k: [sum(active_users_dict[k].values()), -min(active_users_dict[k], default=99)]):
         count_strs = "".join(["%2s " % active_users_dict[uid].get(day_offset, 0) for day_offset in range(n_days)])
-        print("%10s  %s" % (users[uid]['real_name'], count_strs))
+        res.append("%10s(%3d) %s" % (users[uid]['real_name'], sum(active_users_dict[uid].values()), count_strs))
 
     res.append("\nMOST ACTIVE:")
     for e in counter.most_common():
@@ -181,7 +185,7 @@ def run():
     n_days = int(args.num_days)
     token, input_channel, output_channel, users = read_config_files(args)
     now_datetime = DT.datetime.now()
-    
+    min_posts = 1
     # Slack API call to get history
     message_history = get_message_history(token,
                                           input_channel['channel_id'],
@@ -193,15 +197,13 @@ def run():
     
     #calc who is active
     active_users_dict = aggregate_activity(message_history, n_days, now_datetime, users)
-    for key in active_users_dict:
-        print(key, active_users_dict[key])
-        
+
     # Preamble
     introduction = make_introduction(input_channel, n_days)
 
     counter = Counter(map(lambda x: x['user'], message_history))
     
-    conclusion = make_conclusion(active_users_dict, n_days, counter, users)
+    conclusion = make_conclusion(active_users_dict, n_days, counter, min_posts, users)
 
     # Assemble the full_message
     full_message = '\n'.join(['```', introduction, conclusion, '```'])
