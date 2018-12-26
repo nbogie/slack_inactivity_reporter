@@ -18,7 +18,12 @@ import argparse
 import json
 from collections import Counter
 import datetime as DT
+import os
 
+
+class MissingEnvVarException(Exception):
+   """Raised when a required env var is not set"""
+   pass
 
 def format_channel_for_slack(channel_dict):
     return ''.join(['<#',
@@ -143,8 +148,42 @@ def parse_command_line():
                         help = 'flag to dry-run results to standard output')
     return parser.parse_args()
 
+def get_env_var_or_fail(k):
+    if k in os.environ:
+        return os.environ[k]
+    else:
+        raise MissingEnvVarException('Missing required env var %s' % k)
 
-def read_config_files(args):
+def env_var_to_dict(env_var_name, field_names):
+    raw_val = get_env_var_or_fail(env_var_name)
+    return dict(zip(field_names, raw_val.split(",")))
+    
+
+def env_var_to_dict_of_dicts(env_var_name, field_names, key_field_name, line_sep):
+    """Take an env var with content like:
+       a1,a2,a3/b1,b2,b3/c1,c2,c3
+       and convert into a dict with a subdict for each line.
+       The subdicts map the given field names to the corresponingly-ordered value
+       They are stored in the main dict by the value they have for key_field_name
+    """
+    dicts = {}
+    raw_val = get_env_var_or_fail(env_var_name)
+    for line in raw_val.split(line_sep):
+        if len(line) < 4:
+            raise Exception("empty line in env var: %s" % env_var_name)
+        d  = dict(zip(field_names, line.split(",")))
+        dicts[d[key_field_name]] = d
+    return dicts
+
+def read_env_vars():
+    token = get_env_var_or_fail("SLACK_API_TOKEN")    
+    input_channel = env_var_to_dict("SLACK_INPUT_CHANNEL", ['channel_id', 'channel_name'])
+    output_channel = env_var_to_dict("SLACK_OUTPUT_CHANNEL", ['channel_id', 'channel_name'])
+    users_dict = env_var_to_dict_of_dicts("SLACK_USERS", ["user_id", "user_name","real_name"], "user_id", "/")
+    return token, input_channel, output_channel, users_dict
+
+#not used any more now we're moving to env vars for aws lambda
+def retired_read_config_files(args):
     # Read configuration from the specified files
     with open(args.token_file) as token_file:
         token = token_file.read().strip()
@@ -170,12 +209,12 @@ def timestamp_for_days_ago(now_datetime, n_days):
     timestamp = (week_ago - DT.datetime(1970, 1, 1)) / DT.timedelta(seconds=1)
     return timestamp
 
-
 def run():
     args = parse_command_line()
     dry_run = args.dry_run
     n_days = int(args.num_days)
-    token, input_channel, output_channel, users = read_config_files(args)
+    token, input_channel, output_channel, users = read_env_vars() # read_config_files(args)
+    
     now_datetime = DT.datetime.now()
     min_posts = 1
     # Slack API call to get history
