@@ -11,7 +11,7 @@
 #                                  -o output_channel.csv \
 #                                  -u users.csv \
 #                                  -d 7
-
+import enum
 import slack_api
 import csv
 import argparse
@@ -97,30 +97,40 @@ def aggregate_activity(history, n_days, now_datetime, users):
 
 def make_introduction(input_channel, n_days):
     channel_name = input_channel['channel_name']
-    return "Slack report time: %s\n\nWho's NOT present in the last %d days on #%s?\n" % ( DT.datetime.now(), n_days, channel_name )
+    return "Slack report time: %s\n\nLeast activity (posts, replies) over the last %d days on #%s\n" % ( DT.datetime.now().strftime("%c"), n_days, channel_name )
 
+class ReportMode(enum.Enum):
+    FULL = 1
+    LITE = 2
 
-def make_conclusion(active_users_dict, n_days, counter, threshold, users):
-    res = []
-    non_posters = [user_id for user_id in active_users_dict
-                   if sum(active_users_dict[user_id].values()) < threshold]
-    if len(non_posters) == 0:
-        res.append('No-one is missing!  Go team!')
-    else:
-        tag_items = [format_user_for_text(user_id, users[user_id])
-                     for user_id in non_posters]
-        res.extend(tag_items)
+def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE):
     
-    res.append("\nMSGS-PER-DAY BREAKDOWN:\n")
-    #header
-    res.append("USER / DAY:     %s" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)])))
-    res.append("-" * 80)
+    if (mode == ReportMode.LITE):
+        title = "Total posts per user in %d days" % n_days
+        header = ""
+        spacer = ""
+
+    else:
+        title = "More detail: Msgs-per-day breakdown"
+        header = "USER / DAY:     %s days ago" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)]))
+        spacer ="-" * 50
+    
+    res = []
+    res.append("\n%s:\n" % title)
+    res.append(header)
+    res.append(spacer)
     
     for uid in sorted(active_users_dict, key=lambda k: (sum(active_users_dict[k].values()), -min(active_users_dict[k], default=99))):
+        nameCol = users[uid]['real_name'].ljust(10)
+        countTotal = sum(active_users_dict[uid].values())
         count_strs = "".join(["%2s " % active_users_dict[uid].get(day_offset, 0) for day_offset in range(n_days)])
-        res.append("%10s(%3d) %s" % (users[uid]['real_name'], sum(active_users_dict[uid].values()), count_strs))
+        if mode == ReportMode.LITE:
+            res.append("%s(%3d)" % (nameCol, countTotal))
+        else:
+            res.append("%s(%3d) %s" % (nameCol, countTotal, count_strs))
 
     return "\n".join(res)
+
 
 
 def post_message(token, channel, text, bot_name):
@@ -141,7 +151,7 @@ def parse_command_line():
     parser.add_argument('-o', '--output_channel_file',
                         help = 'file with Slack channel to write to')
     parser.add_argument('-u', '--user_file', help = 'file with user list')
-    parser.add_argument('-d', '--num_days', default=10, type=int, help = 'number of days over which to look back')
+    parser.add_argument('-d', '--num_days', default=5, type=int, help = 'number of days over which to look back')
     parser.add_argument('-l', '--log_raw_json', action='store_true', help = 'log raw json response to file: sensitive/channels.history.json')
     parser.add_argument('-f', '--use_fake_data', action='store_true', help = 'use fake data instead of getting from slack API')
     parser.add_argument('-r', '--dry_run', action = 'store_true',
@@ -233,11 +243,13 @@ def run():
     introduction = make_introduction(input_channel, n_days)
 
     counter = Counter(map(lambda x: x['user'], message_history))
-    
-    conclusion = make_conclusion(active_users_dict, n_days, counter, min_posts, users)
 
+    report1 = make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
+    report2 = make_activity_report(active_users_dict, users, n_days, mode=ReportMode.FULL)
+
+    
     # Assemble the full_message
-    full_message = '\n'.join(['```', introduction, conclusion, '```'])
+    full_message = '\n'.join(['```', introduction, report1, report2, '```'])
 
     # Slack API call to publish summary
     if dry_run:
