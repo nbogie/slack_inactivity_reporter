@@ -1,8 +1,8 @@
-# Slack Standup Snitch
+# Slack Inactivity Reporter
 
-This is a modification (primarily a simplification) of an existing project, for our purposes.
+This is a modification (primarily a simplification) of an existing project "Standup Snitch", for our purposes.
 
-The Slack Standup Snitch is a script that uses the [Slack](https://slack.com/) API and reports user activity to stdout.  The project also has the ability to post the report back to a different slack channel.
+It is a script that uses the [Slack](https://slack.com/) API and reports user activity to stdout.  The project also has the ability to post the report back to a different slack channel.
 
 It runs fully automated so could be scheduled with cron.
 
