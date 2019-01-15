@@ -64,7 +64,11 @@ def get_message_history(token, channel_id, channel_name, days, now_datetime, use
 
     if (should_log_raw_channel_history):
         with open('sensitive/channels.history.json', 'w') as f:
-            f.write(json_pp(history_raw))    
+            f.write(json_pp(history_raw))
+    
+    if 'has_more' in history_raw and history_raw['has_more']:
+        print('WARNING: messages missing from this report.  Try reducing the number of days to report upon.')
+
     return (history_raw, 
             [{'user': message['user'], 'ts': message['ts']}
             for message in history_raw['messages']
