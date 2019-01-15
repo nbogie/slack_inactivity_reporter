@@ -17,6 +17,7 @@ import csv
 import argparse
 import json
 from collections import Counter
+import itertools
 import datetime as DT
 import os
 
@@ -92,6 +93,7 @@ def find_calls_activity(history_raw, users):
         and 'ts' in message
         and 'room' in message]
     return [c for c in all_calls if c['duration_m'] > 0 ]
+
 def get_day_offset_for_ts(ts, now_datetime):
     now_ts = (now_datetime - DT.datetime(1970, 1, 1)) / DT.timedelta(seconds=1)
     days_ago = int((now_ts - ts) / 86400)
@@ -152,8 +154,8 @@ def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
     return "\n".join(res)
 
 
-def make_call_summary_report(calls_list, users):
-    lines = ["", "Calls Summary - Who talks to who?", ""]
+def make_call_summary_report(calls_list, users, for_graphviz=False):
+    lines = ["", "Calls Summary - Who talks to whom?", ""]
     summary_of_each_call = [
             (users[call['user']]['real_name'], 
             call['duration_m'],
@@ -161,10 +163,23 @@ def make_call_summary_report(calls_list, users):
             )         
         for call in calls_list if call['user'] in users]
     
-    for (starter, duration, participants) in summary_of_each_call:
-        lines.append("Call of duration %dm started by %s, \n\twith participants %s" 
-        % (duration, starter, ", ".join(participants)))
-    
+    if for_graphviz:
+        # list each user as node
+        # list each call as a list of edges between its participants
+        lines = ["graph CallNetwork {"]
+        for uid in users:
+            lines.append("%s;" % users[uid]['real_name'])
+        for (_, _, participants) in summary_of_each_call:            
+            for (f, t) in itertools.combinations(participants, 2):
+                lines.append("%s -- %s;" % (f, t))
+        
+        lines.append("}")         
+
+    else:
+        for (starter, duration, participants) in summary_of_each_call:
+            lines.append("Call of duration %dm started by %s, \n\twith participants %s" 
+            % (duration, starter, ", ".join(participants)))    
+
     return "\n".join(lines)
 
 def make_calls_activity_report(active_users_dict, calls_history, users, initiators_only = False):
@@ -213,6 +228,7 @@ def parse_command_line():
     parser.add_argument('-u', '--user_file', help = 'file with user list')
     parser.add_argument('-d', '--num_days', default=5, type=int, help = 'number of days over which to look back')
     parser.add_argument('-l', '--log_raw_json', action='store_true', help = 'log raw json response to file: sensitive/channels.history.json')
+    parser.add_argument('-g', '--graph_calls', action='store_true', help = 'graph calls to dot file: sensitive/calls.dot')
     parser.add_argument('-f', '--use_fake_data', action='store_true', help = 'use fake data instead of getting from slack API')
     parser.add_argument('-r', '--dry_run', action = 'store_true',
                         help = 'flag to dry-run results to standard output')
@@ -284,7 +300,7 @@ def run():
     dry_run = args.dry_run
     n_days = int(args.num_days)
     token, input_channel, output_channel, users = read_env_vars() # read_config_files(args)
-    
+    should_graph_calls = args.graph_calls
     now_datetime = DT.datetime.now()
     min_posts = 1
     # Slack API call to get history
@@ -300,7 +316,6 @@ def run():
     active_users_dict = aggregate_activity(message_history, n_days, now_datetime, users)
     
     calls_list = find_calls_activity(history_raw, users)
-
     
     # Preamble
     introduction = make_introduction(input_channel, n_days)
@@ -310,6 +325,11 @@ def run():
     report1 = make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
     report2 = make_activity_report(active_users_dict, users, n_days, mode=ReportMode.FULL)
     calls_summary_report = make_call_summary_report(calls_list, users)
+    if should_graph_calls:
+        graphviz_calls_summary_report = make_call_summary_report(calls_list, users, for_graphviz=True)
+        with open('sensitive/calls.dot', 'w') as f:
+            f.write(graphviz_calls_summary_report)
+    
     calls_report = make_calls_activity_report(active_users_dict, calls_list, users)
     call_starters_report = make_calls_activity_report(active_users_dict, calls_list, users, initiators_only=True)
     
