@@ -65,13 +65,29 @@ def get_message_history(token, channel_id, channel_name, days, now_datetime, use
     if (should_log_raw_channel_history):
         with open('sensitive/channels.history.json', 'w') as f:
             f.write(json_pp(history_raw))    
-    return [{'user': message['user'], 'ts': message['ts']}
+    return (history_raw, 
+            [{'user': message['user'], 'ts': message['ts']}
             for message in history_raw['messages']
             if (message['type'] == 'message' and
                 'user' in message and
-                'ts' in message)]
+                'ts' in message)])
 
-
+def find_calls_activity(history_raw, users):
+    all_calls = [{
+        'user': message['user'], 
+        'ts': message['ts'], 
+        'name': message['room']['name'],
+        'date_start': message['room']['date_start'],
+        'duration_m': round((int(message['room']['date_end']) - int(message['room']['date_start'])) / 60),
+        'participants': message['room']['participant_history']} 
+    for message in history_raw['messages']
+    if 'subtype' in message
+        and message['subtype'] == 'sh_room_created' 
+        and message['text'].startswith('Started a ')
+        and 'user' in message 
+        and 'ts' in message
+        and 'room' in message]
+    return [c for c in all_calls if c['duration_m'] > 0 ]
 def get_day_offset_for_ts(ts, now_datetime):
     now_ts = (now_datetime - DT.datetime(1970, 1, 1)) / DT.timedelta(seconds=1)
     days_ago = int((now_ts - ts) / 86400)
@@ -129,6 +145,46 @@ def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
         else:
             res.append("%s(%3d) %s" % (nameCol, countTotal, count_strs))
 
+    return "\n".join(res)
+
+
+def make_call_summary_report(calls_list, users):
+    lines = ["", "Calls Summary - Who talks to who?", ""]
+    summary_of_each_call = [
+            (users[call['user']]['real_name'], 
+            call['duration_m'],
+            [users[participant]['real_name'] for participant in call['participants'] if participant in users]
+            )         
+        for call in calls_list if call['user'] in users]
+    
+    for (starter, duration, participants) in summary_of_each_call:
+        lines.append("Call of duration %dm started by %s, with participants %s" 
+        % (duration, starter, ", ".join(participants)))
+    
+    return "\n".join(lines)
+
+def make_calls_activity_report(active_users_dict, calls_history, users, initiators_only = False):
+    
+    if initiators_only:
+        title = "CALL INITIATION"
+        header = "Number of calls the user INITIATED"
+    else:
+        title = "CALL PARTICIPATION"
+        header = "Number of calls the user participated in.  Note: Durations may not reflect the amount of time the participant spent on the call."
+    spacer = ""
+
+    res = []
+    res.append("\n%s:\n" % title)
+    res.append(header)
+    res.append(spacer)
+    
+    for uid in sorted(active_users_dict, key=lambda k: (-len([c for c in calls_history if c['user'] == k or (k in c['participants'] and not initiators_only)]))):
+        nameCol = users[uid]['real_name'].ljust(10)
+        durations = [c['duration_m'] for c in calls_history 
+        if c['user'] == uid or (uid in c['participants'] and not initiators_only)]
+        totalCalls = len(durations)
+        res.append("%s %3d calls  (%s minutes)" % (nameCol, totalCalls, durations))
+        
     return "\n".join(res)
 
 
@@ -228,7 +284,7 @@ def run():
     now_datetime = DT.datetime.now()
     min_posts = 1
     # Slack API call to get history
-    message_history = get_message_history(token,
+    history_raw, message_history = get_message_history(token,
                                           input_channel['channel_id'],
                                           input_channel['channel_name'],
                                           n_days,
@@ -238,7 +294,10 @@ def run():
     
     #calc who is active
     active_users_dict = aggregate_activity(message_history, n_days, now_datetime, users)
+    
+    calls_list = find_calls_activity(history_raw, users)
 
+    
     # Preamble
     introduction = make_introduction(input_channel, n_days)
 
@@ -246,10 +305,12 @@ def run():
 
     report1 = make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
     report2 = make_activity_report(active_users_dict, users, n_days, mode=ReportMode.FULL)
-
+    calls_summary_report = make_call_summary_report(calls_list, users)
+    calls_report = make_calls_activity_report(active_users_dict, calls_list, users)
+    call_starters_report = make_calls_activity_report(active_users_dict, calls_list, users, initiators_only=True)
     
     # Assemble the full_message
-    full_message = '\n'.join(['```', introduction, report1, report2, '```'])
+    full_message = '\n'.join(['```', introduction, report1, report2, calls_summary_report, calls_report, call_starters_report, '```'])
 
     # Slack API call to publish summary
     if dry_run:
