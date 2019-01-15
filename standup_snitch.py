@@ -158,7 +158,7 @@ def make_call_summary_report(calls_list, users):
         for call in calls_list if call['user'] in users]
     
     for (starter, duration, participants) in summary_of_each_call:
-        lines.append("Call of duration %dm started by %s, with participants %s" 
+        lines.append("Call of duration %dm started by %s, \n\twith participants %s" 
         % (duration, starter, ", ".join(participants)))
     
     return "\n".join(lines)
