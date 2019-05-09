@@ -8,6 +8,11 @@ It runs fully automated so could be scheduled with cron.
 
 ## Setup instructions
 
+### Pre-reqs
+Python3
+
+### Setup steps
+
 1. Clone this repo.
 2. [Get a LEGACY Slack API token.](https://api.slack.com/custom-integrations/legacy-tokens) Be very careful with this key, do NOT check it into source control.  If someone has this token, they have access to any slack content you can read 
 3. Get a list of your users along with their internal Slack IDs:
