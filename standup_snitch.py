@@ -134,7 +134,7 @@ def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
 
     else:
         title = "More detail: Msgs-per-day breakdown"
-        header = "USER / DAY:     %s days ago" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)]))
+        header = "USER / DAY:          %s days ago" % ("".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)]))
         spacer ="-" * 50
     
     res = []
@@ -143,7 +143,7 @@ def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
     res.append(spacer)
     
     for uid in sorted(active_users_dict, key=lambda k: (sum(active_users_dict[k].values()), -min(active_users_dict[k], default=99))):
-        nameCol = users[uid]['real_name'].ljust(10)
+        nameCol = users[uid]['real_name'].ljust(15)
         countTotal = sum(active_users_dict[uid].values())
         count_strs = "".join(["%2s " % active_users_dict[uid].get(day_offset, 0) for day_offset in range(n_days)])
         if mode == ReportMode.LITE:
@@ -198,7 +198,7 @@ def make_calls_activity_report(active_users_dict, calls_history, users, initiato
     res.append(spacer)
     
     for uid in sorted(active_users_dict, key=lambda k: (-len([c for c in calls_history if c['user'] == k or (k in c['participants'] and not initiators_only)]))):
-        nameCol = users[uid]['real_name'].ljust(10)
+        nameCol = users[uid]['real_name'].ljust(15)
         durations = [c['duration_m'] for c in calls_history 
         if c['user'] == uid or (uid in c['participants'] and not initiators_only)]
         totalCalls = len(durations)
