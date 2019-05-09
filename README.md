@@ -9,8 +9,8 @@ It runs fully automated so could be scheduled with cron.
 ## Setup instructions
 
 ### Pre-reqs
-Python3
-graphviz (for call graph diagram production)
+* python3
+* graphviz (for call graph diagram production)
 
 ### Setup steps
 
