@@ -9,12 +9,7 @@ It runs fully automated so could be scheduled with cron.
 ## Setup instructions
 
 1. Clone this repo.
-2. [Get a LEGACY Slack API token.](https://api.slack.com/custom-integrations/legacy-tokens) Save it to the
-   repo's directory under `api_token.txt`. (You can save it wherever
-   you want, but the `.gitignore` is put together to make this a
-   convenient choice. The same is true for the other filenames below.)
-   We'll improve this to use the new auth system if we decide to 
-   use it at all.
+2. [Get a LEGACY Slack API token.](https://api.slack.com/custom-integrations/legacy-tokens) Be very careful with this key, do NOT check it into source control.  If someone has this token, they have access to any slack content you can read 
 3. Get a list of your users along with their internal Slack IDs:
 
    ```
@@ -40,17 +35,21 @@ It runs fully automated so could be scheduled with cron.
    will be saved here for debugging if you request them.  
    This directory is ignored by git.
 
+6. Make your slack legacy token available as an environment variable called SLACK_API_TOKEN.  The script will pick it up when it runs.
+
 ## How to use
 
-### Typical use
+### Typical usage:
+
+Make an executable script with this content (but with your input data):
 
 ```
-python3 standup_snitch.py -t api_token.txt \
-                          -i input_channel.csv \
-                          -o output_channel.csv \
-                          -u users.csv \
-                          -d 5
+export SLACK_USERS=UHAAABB123,neill,Neill/UHYAABB122,german,German/...more users here.../UABB124,last-user/LastUserExample
+
+SLACK_OUTPUT_CHANNEL=exampleid,random SLACK_INPUT_CHANNEL=YOURCHANNELID,your-channel-name python3 standup_snitch.py -d7 -g
 ```
+Then run it.
+
 
 ### Other features
 
