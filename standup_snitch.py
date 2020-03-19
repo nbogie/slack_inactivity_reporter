@@ -53,11 +53,17 @@ def json_pp(obj):
 
 def get_message_history(token, channel_id, channel_name, days, now_datetime, use_fake_data=False, should_log_raw_channel_history=False):
     ts = timestamp_for_days_ago(now_datetime, days)
+    print("Going back as far as...")
+
+    print(DT.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%dT%H:%M:%SZ'))
+
     if (use_fake_data):
         print('using fake data, not loading from slack')
         with open('sensitive/channels.history.json') as f:
             history_raw = json.load(f)
     else:
+        # TODO: 'conversations.history' will allow private channels (e.g. fundamentals course)
+        # but they're not otherwise equivalent.  conversations.history yields lower numbers.
         history_raw = slack_api.call_slack('channels.history',
                                            {'token': token,
                                             'channel': channel_id,
