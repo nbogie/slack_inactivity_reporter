@@ -62,6 +62,13 @@ Then run it.
 * `-r`: Dry-run the `standup_snitch` report to standard output instead
 of sending it to Slack.
 * `-f`: Use fake (non-live) data read from filesystem  `sensitive/channels.history.json`
+
+
+### Generating call graphs from the .dot output.
+
+* Ensure you've run the reporter with `-g` to generate call graph data files (.dot files).  A file on the file system should be generated called `calls.dot`.
+* Run graphviz `dot` tool to turn these into diagrams: `dot -Tpng -O calls.dot`
+
 ## On the Slack API usage:
 
 The following calls are used:
