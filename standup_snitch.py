@@ -85,7 +85,17 @@ def get_message_history(token, channel_id, channel_name, days, now_datetime, use
                  'ts' in message)])
 
 
-def find_calls_activity(history_raw, users):
+def find_calls_activity(history_raw):
+    """
+    Return a list of all calls from the given messages (duration > 0).
+
+    It doesn't matter who initiated them.
+
+    Parameters
+    ----------
+    history_raw: list
+        The messages to search through for calls.
+    """
     all_calls = [{
         'user': message['user'],
         'ts': message['ts'],
@@ -345,7 +355,7 @@ def run():
     active_users_dict = aggregate_activity(
         message_history, n_days, now_datetime, users)
 
-    calls_list = find_calls_activity(history_raw, users)
+    calls_list = find_calls_activity(history_raw)
 
     # Preamble
     introduction = make_introduction(input_channel, n_days)
