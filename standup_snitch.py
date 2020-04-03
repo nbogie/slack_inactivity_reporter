@@ -150,18 +150,20 @@ class ReportMode(enum.Enum):
 def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE):
 
     if (mode == ReportMode.LITE):
+        report_type = "A"
         title = "Total posts per user in %d days" % n_days
         header = ""
         spacer = ""
 
     else:
+        report_type = "B"
         title = "More detail: Msgs-per-day breakdown"
         header = "USER / DAY:          %s days ago" % (
             "".join(["%2d " % day_offset for day_offset in range(1, n_days + 1)]))
         spacer = "-" * 50
 
     res = []
-    res.append("\n%s:\n" % title)
+    res.append("\nSection %s - %s:\n" % (report_type, title))
     res.append(header)
     res.append(spacer)
 
@@ -179,14 +181,30 @@ def make_activity_report(active_users_dict, users, n_days, mode=ReportMode.LITE)
 
 
 def make_call_summary_report(calls_list, users, for_graphviz=False):
-    lines = ["", "Calls Summary - Who talks to whom?", ""]
+    """
+    Makes a graphical or textual report of who has been on a call with who.
+
+    Only considers calls initiated by one of the tracked users.
+
+    Parameters
+    ----------
+    calls_list: list
+        Calls to look through (perhaps representing a section of history)
+    users: list
+        List of users to consider.
+    for_graphviz: boolean
+        A flag indicating this report should be for graphviz dot tool.  
+        If false, prepares a human-readable text report section.
+    """
+    lines = [
+        "", "Section C - Calls Summary - Who talks to whom? (group-initiated calls only)", ""]
     summary_of_each_call = [
         (users[call['user']]['real_name'],
          call['duration_m'],
          [users[participant]['real_name']
           for participant in call['participants'] if participant in users]
          )
-        for call in calls_list if call['user'] in users]
+        for call in calls_list if call['user'] in users]  # call['user'] is participant
 
     if for_graphviz:
         # list each user as node
@@ -211,11 +229,11 @@ def make_call_summary_report(calls_list, users, for_graphviz=False):
 def make_calls_activity_report(active_users_dict, calls_history, users, initiators_only=False):
 
     if initiators_only:
-        title = "CALL INITIATION"
+        title = "SECTION E - Call initiation"
         header = "Number of calls the user INITIATED"
     else:
-        title = "CALL PARTICIPATION"
-        header = "Number of calls the user participated in.  Note: Durations may not reflect the amount of time the participant spent on the call."
+        title = "SECTION D - Call participation"
+        header = "Number of calls the user participated in.\n    Note: Includes calls started by users outside the group (e.g. volunteers).\n    Note: Durations are the CALL's duration, not the time the participant spent connected."
     spacer = ""
 
     res = []
